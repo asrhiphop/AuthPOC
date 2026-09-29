@@ -32,4 +32,28 @@ public class User {
 
     @Column(nullable = false)
     private Boolean enabled;
+
+    protected User() {
+    }
+
+    public User(String username, String email, String passwordHash) {
+        this.username = username;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = Role.USER;
+        this.createdAt = LocalDateTime.now();
+        this.enabled = true;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
 }
