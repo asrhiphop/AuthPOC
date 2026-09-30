@@ -1,6 +1,7 @@
 package com.example.authpoc.auth;
 
 import com.example.authpoc.auth.dto.LoginRequest;
+import com.example.authpoc.auth.dto.LoginResponse;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.dto.RegisterResponse;
 import com.example.authpoc.auth.model.RegisterResult;
@@ -68,10 +69,42 @@ public class AuthController {
         );
     }
 
+    @Operation(
+            summary = "Authenticate a user",
+            description = "Authenticates a user and returns an access token."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Authentication successful",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid login data",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid username or password",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            )
+    })
     @PostMapping("/login")
-    public void login(
+    public LoginResponse login(
             @Valid @RequestBody LoginRequest request
     ) {
-        authService.login(request);
+        String accessToken = authService.login(request);
+
+        return new LoginResponse(accessToken);
     }
 }

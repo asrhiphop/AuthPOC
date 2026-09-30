@@ -10,7 +10,7 @@ public record RegisterRequest(
         @Size(min = 3, max = 50)
         @Schema(
                 description = "Unique username",
-                example = "john123"
+                example = "testuser1"
         )
         String username,
 
@@ -18,7 +18,7 @@ public record RegisterRequest(
         @Email
         @Schema(
                 description = "Unique email address",
-                example = "john@example.com"
+                example = "test@example.com"
         )
         String email,
 

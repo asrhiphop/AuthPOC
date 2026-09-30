@@ -3,9 +3,10 @@ package com.example.authpoc.auth;
 import com.example.authpoc.auth.dto.LoginRequest;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.model.RegisterResult;
-import com.example.authpoc.exception.AuthenticationException;
 import com.example.authpoc.exception.EmailAlreadyExistsException;
+import com.example.authpoc.exception.InvalidCredentialsException;
 import com.example.authpoc.exception.UsernameAlreadyExistsException;
+import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.user.User;
 import com.example.authpoc.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,13 +19,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenService jwtTokenService;
 
     public AuthService(
             UserRepository userRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            JwtTokenService jwtTokenService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenService = jwtTokenService;
     }
 
     public RegisterResult register(RegisterRequest request) {
@@ -55,12 +59,24 @@ public class AuthService {
         );
     }
 
-    public void login(LoginRequest request) throws AuthenticationException {
+    public String login(LoginRequest request) throws InvalidCredentialsException {
         Optional<User> user = userRepository.findByUsername(request.username());
 
-        if (user.isEmpty() ||
-                !user.get().matchesPassword(request.password(), passwordEncoder)) {
-            throw new AuthenticationException();
+        if (user.isEmpty()) {
+            throw new InvalidCredentialsException();
         }
+
+        User authenticatedUser = user.get();
+
+        boolean match = authenticatedUser.matchesPassword(
+                request.password(),
+                passwordEncoder
+        );
+
+        if (!match) {
+            throw new InvalidCredentialsException();
+        }
+
+        return jwtTokenService.generateToken(authenticatedUser);
     }
 }

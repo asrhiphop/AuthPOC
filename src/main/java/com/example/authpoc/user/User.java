@@ -58,6 +58,10 @@ public class User {
         return email;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
     public boolean matchesPassword(String password, PasswordEncoder passwordEncoder) {
         return passwordEncoder.matches(password, this.passwordHash);
     }

@@ -48,13 +48,25 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler(AuthenticationException.class)
+    @ExceptionHandler(InvalidCredentialsException.class)
     public ProblemDetail handleAuthenticationFailure(
-            AuthenticationException exception
+            InvalidCredentialsException exception
     ) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
 
         problem.setTitle("Authentication failed");
+        problem.setDetail(exception.getMessage());
+
+        return problem;
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ProblemDetail handleResourceNotFound(
+            ResourceNotFoundException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+
+        problem.setTitle("Resource not found");
         problem.setDetail(exception.getMessage());
 
         return problem;
