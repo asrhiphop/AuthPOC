@@ -1,13 +1,17 @@
 package com.example.authpoc.auth;
 
+import com.example.authpoc.auth.dto.LoginRequest;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.model.RegisterResult;
+import com.example.authpoc.exception.AuthenticationException;
 import com.example.authpoc.exception.EmailAlreadyExistsException;
 import com.example.authpoc.exception.UsernameAlreadyExistsException;
 import com.example.authpoc.user.User;
 import com.example.authpoc.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -49,5 +53,14 @@ public class AuthService {
                 savedUser.getUsername(),
                 savedUser.getEmail()
         );
+    }
+
+    public void login(LoginRequest request) throws AuthenticationException {
+        Optional<User> user = userRepository.findByUsername(request.username());
+
+        if (user.isEmpty() ||
+                !user.get().matchesPassword(request.password(), passwordEncoder)) {
+            throw new AuthenticationException();
+        }
     }
 }

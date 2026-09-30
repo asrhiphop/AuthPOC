@@ -1,5 +1,6 @@
 package com.example.authpoc.auth;
 
+import com.example.authpoc.auth.dto.LoginRequest;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.dto.RegisterResponse;
 import com.example.authpoc.auth.model.RegisterResult;
@@ -65,5 +66,12 @@ public class AuthController {
                 result.username(),
                 result.email()
         );
+    }
+
+    @PostMapping("/login")
+    public void login(
+            @Valid @RequestBody LoginRequest request
+    ) {
+        authService.login(request);
     }
 }

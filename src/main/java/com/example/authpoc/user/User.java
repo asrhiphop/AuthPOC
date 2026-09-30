@@ -1,6 +1,7 @@
 package com.example.authpoc.user;
 
 import jakarta.persistence.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -55,5 +56,9 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public boolean matchesPassword(String password, PasswordEncoder passwordEncoder) {
+        return passwordEncoder.matches(password, this.passwordHash);
     }
 }

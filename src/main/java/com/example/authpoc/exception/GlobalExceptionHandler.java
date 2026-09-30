@@ -47,4 +47,16 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthenticationFailure(
+            AuthenticationException exception
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+
+        problem.setTitle("Authentication failed");
+        problem.setDetail(exception.getMessage());
+
+        return problem;
+    }
 }
