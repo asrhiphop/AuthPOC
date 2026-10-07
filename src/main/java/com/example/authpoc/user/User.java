@@ -37,13 +37,22 @@ public class User {
     protected User() {
     }
 
-    public User(String username, String email, String passwordHash) {
+    public User(
+            String username,
+            String email,
+            String passwordHash,
+            Role role
+    ) {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
-        this.role = Role.USER;
+        this.role = role;
         this.createdAt = LocalDateTime.now();
         this.enabled = true;
+    }
+
+    public User(String username, String email, String passwordHash) {
+        this(username, email, passwordHash, Role.USER);
     }
 
     public UUID getId() {
@@ -64,5 +73,9 @@ public class User {
 
     public boolean matchesPassword(String password, PasswordEncoder passwordEncoder) {
         return passwordEncoder.matches(password, this.passwordHash);
+    }
+
+    public void recordLogin() {
+        this.lastLoginAt = LocalDateTime.now();
     }
 }

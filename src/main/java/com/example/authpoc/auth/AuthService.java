@@ -11,6 +11,7 @@ import com.example.authpoc.user.User;
 import com.example.authpoc.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -59,6 +60,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public String login(LoginRequest request) throws InvalidCredentialsException {
         Optional<User> user = userRepository.findByUsername(request.username());
 
@@ -76,6 +78,8 @@ public class AuthService {
         if (!match) {
             throw new InvalidCredentialsException();
         }
+
+        authenticatedUser.recordLogin();
 
         return jwtTokenService.generateToken(authenticatedUser);
     }
