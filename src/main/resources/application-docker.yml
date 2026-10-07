@@ -7,3 +7,8 @@ spring:
 rsa:
   public-key: file:/app/certs/public.pem
   private-key: file:/app/certs/private.pem
+
+admin:
+  username: ${ADMIN_USERNAME}
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
