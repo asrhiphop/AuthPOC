@@ -1,15 +1,17 @@
 package com.example.authpoc.exception;
 
-public class ResourceAlreadyExistsException extends RuntimeException {
+import org.springframework.http.HttpStatus;
 
-    private final String field;
+public class ResourceAlreadyExistsException extends BaseResourceException {
 
-    public ResourceAlreadyExistsException(String field) {
-        super("already exists");
-        this.field = field;
-    }
-
-    public String getField() {
-        return field;
+    public ResourceAlreadyExistsException(String resourceName, String fieldName, Object fieldValue) {
+        super(
+                HttpStatus.CONFLICT,
+                "Resource already exists",
+                String.format("%s already exists with %s : '%s'", resourceName, fieldName, fieldValue),
+                resourceName,
+                fieldName,
+                fieldValue
+        );
     }
 }

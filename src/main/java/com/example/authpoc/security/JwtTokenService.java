@@ -1,6 +1,6 @@
 package com.example.authpoc.security;
 
-import com.example.authpoc.user.User;
+import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -18,16 +18,16 @@ public class JwtTokenService {
         this.encoder = encoder;
     }
 
-    public String generateToken(User user) {
+    public String generateToken(UserResponse user) {
         Instant now = Instant.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("AuthPOC")
                 .issuedAt(now)
                 .expiresAt(now.plus(1, ChronoUnit.HOURS))
-                .subject(user.getId().toString())
-                .claim("username", user.getUsername())
-                .claim("role", user.getRole().name())
+                .subject(user.id().toString())
+                .claim("username", user.username())
+                .claim("role", user.role().name())
                 .build();
 
         return encoder

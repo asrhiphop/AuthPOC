@@ -3,83 +3,39 @@ package com.example.authpoc.auth;
 import com.example.authpoc.auth.dto.LoginRequest;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.model.RegisterResult;
-import com.example.authpoc.exception.EmailAlreadyExistsException;
-import com.example.authpoc.exception.InvalidCredentialsException;
-import com.example.authpoc.exception.UsernameAlreadyExistsException;
 import com.example.authpoc.security.JwtTokenService;
-import com.example.authpoc.user.User;
-import com.example.authpoc.user.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.example.authpoc.user.UserService;
+import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
     private final JwtTokenService jwtTokenService;
 
-    public AuthService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            JwtTokenService jwtTokenService
-    ) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    public AuthService(UserService userService, JwtTokenService jwtTokenService) {
+        this.userService = userService;
         this.jwtTokenService = jwtTokenService;
     }
 
     public RegisterResult register(RegisterRequest request) {
-
-        if (userRepository.existsByUsername(request.username())) {
-            throw new UsernameAlreadyExistsException();
-        }
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException();
-        }
-
-        String passwordHash =
-                passwordEncoder.encode(request.password());
-
-        User user = new User(
+        UserResponse savedUser = userService.createUser(
                 request.username(),
                 request.email(),
-                passwordHash
+                request.password()
         );
 
-        User savedUser = userRepository.save(user);
-
-        return new RegisterResult(
-                savedUser.getId(),
-                savedUser.getUsername(),
-                savedUser.getEmail()
-        );
+        return RegisterResult.from(savedUser);
     }
 
-    @Transactional
-    public String login(LoginRequest request) throws InvalidCredentialsException {
-        Optional<User> user = userRepository.findByUsername(request.username());
-
-        if (user.isEmpty()) {
-            throw new InvalidCredentialsException();
-        }
-
-        User authenticatedUser = user.get();
-
-        boolean match = authenticatedUser.matchesPassword(
-                request.password(),
-                passwordEncoder
+    public String login(LoginRequest request) {
+        UserResponse authenticatedUser = userService.verifyCredentials(
+                request.username(),
+                request.password()
         );
 
-        if (!match) {
-            throw new InvalidCredentialsException();
-        }
-
-        authenticatedUser.recordLogin();
+        userService.recordLogin(authenticatedUser.id());
 
         return jwtTokenService.generateToken(authenticatedUser);
     }

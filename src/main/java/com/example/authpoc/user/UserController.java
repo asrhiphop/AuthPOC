@@ -25,8 +25,6 @@ public class UserController {
     public UserResponse me(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(Objects.requireNonNull(jwt.getSubject()));
 
-        User user = userService.getById(userId);
-
-        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), user.getRole());
+        return userService.getUser(userId);
     }
 }

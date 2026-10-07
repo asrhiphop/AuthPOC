@@ -1,6 +1,10 @@
 package com.example.authpoc.user;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -8,7 +12,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -22,6 +29,7 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -31,11 +39,9 @@ public class User {
 
     private LocalDateTime lastLoginAt;
 
+    @Setter
     @Column(nullable = false)
     private Boolean enabled;
-
-    protected User() {
-    }
 
     public User(
             String username,
@@ -53,22 +59,6 @@ public class User {
 
     public User(String username, String email, String passwordHash) {
         this(username, email, passwordHash, Role.USER);
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Role getRole() {
-        return role;
     }
 
     public boolean matchesPassword(String password, PasswordEncoder passwordEncoder) {
