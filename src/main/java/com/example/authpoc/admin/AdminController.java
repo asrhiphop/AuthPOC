@@ -4,7 +4,6 @@ import com.example.authpoc.admin.dto.UpdateUserRoleRequest;
 import com.example.authpoc.admin.dto.UpdateUserStatusRequest;
 import com.example.authpoc.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,6 +11,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +22,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -36,17 +38,13 @@ public class AdminController {
     }
 
     @Operation(
-            summary = "List all users",
-            description = "Retrieves a list of all registered users in the system."
+            summary = "List all users (Paginated)",
+            description = "Retrieves a paginated and sorted list of all registered users in the system."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "Users retrieved successfully",
-                    content = @Content(
-                            mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = UserResponse.class))
-                    )
+                    description = "Users retrieved successfully"
             ),
             @ApiResponse(
                     responseCode = "401",
@@ -67,8 +65,10 @@ public class AdminController {
     })
     @PreAuthorize("hasAuthority('admin:user:read')")
     @GetMapping("/users")
-    public List<UserResponse> getUsers() {
-        return adminService.getUsers();
+    public Page<UserResponse> getUsers(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return adminService.getUsers(pageable);
     }
 
     @Operation(

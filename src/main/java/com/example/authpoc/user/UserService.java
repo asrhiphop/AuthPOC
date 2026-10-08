@@ -6,11 +6,12 @@ import com.example.authpoc.exception.ResourceAlreadyExistsException;
 import com.example.authpoc.exception.ResourceNotFoundException;
 import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,11 +31,9 @@ public class UserService {
         this.lockoutProperties = lockoutProperties;
     }
 
-    public List<UserResponse> getUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(UserResponse::fromEntity)
-                .toList();
+    public Page<UserResponse> getUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(UserResponse::fromEntity);
     }
 
     public UserResponse getUser(UUID id) {

@@ -5,9 +5,10 @@ import com.example.authpoc.admin.dto.UpdateUserStatusRequest;
 import com.example.authpoc.exception.SelfOperationException;
 import com.example.authpoc.user.UserService;
 import com.example.authpoc.user.dto.UserResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,8 +19,8 @@ public class AdminService {
         this.userService = userService;
     }
 
-    public List<UserResponse> getUsers() {
-        return userService.getUsers();
+    public Page<UserResponse> getUsers(Pageable pageable) {
+        return userService.getUsers(pageable);
     }
 
     public UserResponse getUser(UUID id) {
