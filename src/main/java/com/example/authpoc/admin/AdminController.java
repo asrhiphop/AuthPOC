@@ -26,7 +26,6 @@ import java.util.UUID;
 @Tag(name = "Admin Operations", description = "Endpoints for administrative user management")
 @RestController
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/admin")
 public class AdminController {
 
@@ -59,13 +58,14 @@ public class AdminController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - Admin role required",
+                    description = "Forbidden - Insufficient permissions ('admin:user:read' required)",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
                     )
             )
     })
+    @PreAuthorize("hasAuthority('admin:user:read')")
     @GetMapping("/users")
     public List<UserResponse> getUsers() {
         return adminService.getUsers();
@@ -94,7 +94,7 @@ public class AdminController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - Admin role required",
+                    description = "Forbidden - Insufficient permissions ('admin:user:read' required)",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
@@ -109,6 +109,7 @@ public class AdminController {
                     )
             )
     })
+    @PreAuthorize("hasAuthority('admin:user:read')")
     @GetMapping("/users/{id}")
     public UserResponse getUser(@PathVariable UUID id) {
         return adminService.getUser(id);
@@ -141,7 +142,7 @@ public class AdminController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - Admin role required",
+                    description = "Forbidden - Insufficient permissions ('admin:user:write' required)",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
@@ -156,6 +157,7 @@ public class AdminController {
                     )
             )
     })
+    @PreAuthorize("hasAuthority('admin:user:write')")
     @PutMapping("/users/{id}/enabled")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateUserStatus(
@@ -195,7 +197,7 @@ public class AdminController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - Admin role required",
+                    description = "Forbidden - Insufficient permissions ('admin:user:write' required)",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
@@ -210,6 +212,7 @@ public class AdminController {
                     )
             )
     })
+    @PreAuthorize("hasAuthority('admin:user:write')")
     @PutMapping("/users/{id}/role")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateUserRole(
@@ -249,7 +252,7 @@ public class AdminController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - Admin role required",
+                    description = "Forbidden - Insufficient permissions ('admin:user:delete' required)",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
@@ -264,6 +267,7 @@ public class AdminController {
                     )
             )
     })
+    @PreAuthorize("hasAuthority('admin:user:delete')")
     @DeleteMapping("/users/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(
