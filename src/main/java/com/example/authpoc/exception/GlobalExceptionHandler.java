@@ -2,12 +2,14 @@ package com.example.authpoc.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -17,14 +19,18 @@ public class GlobalExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setTitle("Validation failed");
 
-        Map<String, String> errors = new HashMap<>();
-        exception.getBindingResult()
+        Map<String, List<String>> errors = exception.getBindingResult()
                 .getFieldErrors()
-                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+                .stream()
+                .collect(Collectors.groupingBy(
+                        FieldError::getField,
+                        Collectors.mapping(FieldError::getDefaultMessage, Collectors.toList())
+                ));
 
         problem.setProperty("errors", errors);
         return problem;
     }
+
 
     @ExceptionHandler(BaseResourceException.class)
     public ProblemDetail handleBaseResourceException(BaseResourceException exception) {

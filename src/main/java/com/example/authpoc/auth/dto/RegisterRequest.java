@@ -1,5 +1,6 @@
 package com.example.authpoc.auth.dto;
 
+import com.example.authpoc.validation.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +24,7 @@ public record RegisterRequest(
         String email,
 
         @NotBlank
-        @Size(min = 12, max = 128)
+        @ValidPassword
         @Schema(
                 description = "Account password",
                 example = "MySecurePassword123!"
