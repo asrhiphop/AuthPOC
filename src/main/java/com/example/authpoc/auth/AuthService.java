@@ -5,6 +5,7 @@ import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.dto.RegisterResponse;
 import com.example.authpoc.auth.token.RefreshTokenService;
 import com.example.authpoc.auth.token.dto.TokenResponse;
+import com.example.authpoc.exception.InvalidCredentialsException;
 import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.user.UserService;
 import com.example.authpoc.user.dto.UserResponse;
@@ -17,7 +18,11 @@ public class AuthService {
     private final JwtTokenService jwtTokenService;
     private final RefreshTokenService refreshTokenService;
 
-    public AuthService(UserService userService, JwtTokenService jwtTokenService, RefreshTokenService refreshTokenService) {
+    public AuthService(
+            UserService userService,
+            JwtTokenService jwtTokenService,
+            RefreshTokenService refreshTokenService
+    ) {
         this.userService = userService;
         this.jwtTokenService = jwtTokenService;
         this.refreshTokenService = refreshTokenService;
@@ -30,15 +35,27 @@ public class AuthService {
                 request.password()
         );
 
-        return new RegisterResponse(savedUser.id(), savedUser.username(), savedUser.email());
+        return new RegisterResponse(
+                savedUser.id(),
+                savedUser.username(),
+                savedUser.email()
+        );
     }
 
     public TokenResponse login(LoginRequest request) {
-        UserResponse authenticatedUser = userService.verifyCredentials(
-                request.username(),
-                request.password()
-        );
+        UserResponse authenticatedUser;
 
+        try {
+            authenticatedUser = userService.verifyCredentials(
+                    request.username(),
+                    request.password()
+            );
+        } catch (InvalidCredentialsException ex) {
+            userService.recordFailedAttempt(request.username());
+            throw ex;
+        }
+
+        userService.resetFailedAttempts(request.username());
         userService.recordLogin(authenticatedUser.id());
 
         String accessToken = jwtTokenService.generateToken(authenticatedUser);

@@ -6,3 +6,6 @@ security:
   jwt:
     access-token-expiration: 30s
     refresh-token-expiration: 7d
+  lockout:
+    max-attempts: 5
+    duration: 15m

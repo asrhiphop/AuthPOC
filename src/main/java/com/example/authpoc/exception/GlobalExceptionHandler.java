@@ -61,4 +61,14 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ProblemDetail handleAccountLockedException(AccountLockedException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage()
+        );
+        problemDetail.setTitle("Account Locked");
+        return problemDetail;
+    }
 }

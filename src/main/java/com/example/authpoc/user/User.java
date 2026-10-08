@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -43,6 +45,12 @@ public class User {
     @Column(nullable = false)
     private Boolean enabled;
 
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts;
+
+    @Column(name = "lockout_until")
+    private Instant lockoutUntil;
+
     public User(
             String username,
             String email,
@@ -67,5 +75,24 @@ public class User {
 
     public void recordLogin() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public boolean isLocked() {
+        if (lockoutUntil == null) {
+            return false;
+        }
+        return Instant.now().isBefore(lockoutUntil);
+    }
+
+    public void incrementFailedAttempts(int maxAttempts, Duration lockoutDuration) {
+        this.failedLoginAttempts++;
+        if (this.failedLoginAttempts >= maxAttempts) {
+            this.lockoutUntil = Instant.now().plus(lockoutDuration);
+        }
+    }
+
+    public void resetFailedAttempts() {
+        this.failedLoginAttempts = 0;
+        this.lockoutUntil = null;
     }
 }

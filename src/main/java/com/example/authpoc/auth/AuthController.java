@@ -83,7 +83,7 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid login data",
+                    description = "Invalid login payload",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
@@ -91,7 +91,7 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Invalid username or password",
+                    description = "Invalid credentials or account temporarily locked",
                     content = @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class)
