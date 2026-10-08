@@ -52,4 +52,13 @@ public class GlobalExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail handleInvalidTokenException(InvalidTokenException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        problem.setTitle("Invalid Token");
+        problem.setDetail(exception.getMessage());
+
+        return problem;
+    }
 }

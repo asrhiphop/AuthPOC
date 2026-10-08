@@ -1,10 +1,11 @@
 package com.example.authpoc.auth;
 
 import com.example.authpoc.auth.dto.LoginRequest;
-import com.example.authpoc.auth.dto.LoginResponse;
 import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.dto.RegisterResponse;
-import com.example.authpoc.auth.model.RegisterResult;
+import com.example.authpoc.auth.token.RefreshTokenService;
+import com.example.authpoc.auth.token.dto.RefreshTokenRequest;
+import com.example.authpoc.auth.token.dto.TokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,11 +19,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
     private final AuthService authService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, RefreshTokenService refreshTokenService) {
         this.authService = authService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Operation(
@@ -60,13 +62,7 @@ public class AuthController {
     public RegisterResponse register(
             @Valid @RequestBody RegisterRequest request
     ) {
-        RegisterResult result = authService.register(request);
-
-        return new RegisterResponse(
-                result.id(),
-                result.username(),
-                result.email()
-        );
+        return authService.register(request);
     }
 
     @Operation(
@@ -79,7 +75,7 @@ public class AuthController {
                     description = "Authentication successful",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = LoginResponse.class)
+                            schema = @Schema(implementation = TokenResponse.class)
                     )
             ),
             @ApiResponse(
@@ -100,11 +96,68 @@ public class AuthController {
             )
     })
     @PostMapping("/login")
-    public LoginResponse login(
+    public TokenResponse login(
             @Valid @RequestBody LoginRequest request
     ) {
-        String accessToken = authService.login(request);
+        return authService.login(request);
+    }
 
-        return new LoginResponse(accessToken);
+    @Operation(
+            summary = "Logout user",
+            description = "Revokes active refresh token family for the current session."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Logout successful"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request payload",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            )
+    })
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshTokenRequest request) {
+        refreshTokenService.revokeToken(request.refreshToken());
+    }
+
+    @Operation(
+            summary = "Refresh access token",
+            description = "Rotates refresh token and returns a new access token pair."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Token refreshed successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = TokenResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request payload",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid, expired, revoked, or reused refresh token",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class)
+                    )
+            )
+    })
+    @PostMapping("/refresh")
+    public TokenResponse tokenRefresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return refreshTokenService.refresh(request.refreshToken());
     }
 }

@@ -2,7 +2,9 @@ package com.example.authpoc.auth;
 
 import com.example.authpoc.auth.dto.LoginRequest;
 import com.example.authpoc.auth.dto.RegisterRequest;
-import com.example.authpoc.auth.model.RegisterResult;
+import com.example.authpoc.auth.dto.RegisterResponse;
+import com.example.authpoc.auth.token.RefreshTokenService;
+import com.example.authpoc.auth.token.dto.TokenResponse;
 import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.user.UserService;
 import com.example.authpoc.user.dto.UserResponse;
@@ -13,23 +15,25 @@ public class AuthService {
 
     private final UserService userService;
     private final JwtTokenService jwtTokenService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthService(UserService userService, JwtTokenService jwtTokenService) {
+    public AuthService(UserService userService, JwtTokenService jwtTokenService, RefreshTokenService refreshTokenService) {
         this.userService = userService;
         this.jwtTokenService = jwtTokenService;
+        this.refreshTokenService = refreshTokenService;
     }
 
-    public RegisterResult register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         UserResponse savedUser = userService.createUser(
                 request.username(),
                 request.email(),
                 request.password()
         );
 
-        return RegisterResult.from(savedUser);
+        return new RegisterResponse(savedUser.id(), savedUser.username(), savedUser.email());
     }
 
-    public String login(LoginRequest request) {
+    public TokenResponse login(LoginRequest request) {
         UserResponse authenticatedUser = userService.verifyCredentials(
                 request.username(),
                 request.password()
@@ -37,6 +41,9 @@ public class AuthService {
 
         userService.recordLogin(authenticatedUser.id());
 
-        return jwtTokenService.generateToken(authenticatedUser);
+        String accessToken = jwtTokenService.generateToken(authenticatedUser);
+        String refreshToken = refreshTokenService.createRefreshToken(authenticatedUser.id());
+
+        return new TokenResponse(accessToken, refreshToken);
     }
 }

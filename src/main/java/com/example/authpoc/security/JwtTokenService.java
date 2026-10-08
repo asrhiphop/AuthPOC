@@ -1,5 +1,6 @@
 package com.example.authpoc.security;
 
+import com.example.authpoc.security.config.JwtProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -7,31 +8,30 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 @Service
 public class JwtTokenService {
 
-    private final JwtEncoder encoder;
+    private final JwtEncoder jwtEncoder;
+    private final JwtProperties jwtProperties;
 
-    public JwtTokenService(JwtEncoder encoder) {
-        this.encoder = encoder;
+    public JwtTokenService(JwtEncoder jwtEncoder, JwtProperties jwtProperties) {
+        this.jwtEncoder = jwtEncoder;
+        this.jwtProperties = jwtProperties;
     }
 
     public String generateToken(UserResponse user) {
         Instant now = Instant.now();
+        Instant expiresAt = now.plus(jwtProperties.accessTokenExpiration());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("AuthPOC")
+                .issuer("self")
                 .issuedAt(now)
-                .expiresAt(now.plus(1, ChronoUnit.HOURS))
+                .expiresAt(expiresAt)
                 .subject(user.id().toString())
-                .claim("username", user.username())
                 .claim("role", user.role().name())
                 .build();
 
-        return encoder
-                .encode(JwtEncoderParameters.from(claims))
-                .getTokenValue();
+        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
     }
 }
