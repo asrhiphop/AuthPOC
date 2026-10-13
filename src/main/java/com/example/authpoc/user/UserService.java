@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -21,15 +23,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final LockoutProperties lockoutProperties;
+    private final Clock clock;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            LockoutProperties lockoutProperties
+            LockoutProperties lockoutProperties,
+            Clock clock
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.lockoutProperties = lockoutProperties;
+        this.clock = clock;
     }
 
     public Page<UserResponse> getUsers(Pageable pageable) {
@@ -45,10 +50,11 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse verifyCredentials(String username, String rawPassword) {
+        Instant now = clock.instant();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UnknownUsernameException(username));
 
-        if (user.isLocked()) {
+        if (user.isLocked(now)) {
             throw new AccountLockedException(username);
         }
 
@@ -61,10 +67,12 @@ public class UserService {
 
     @Transactional
     public void recordFailedAttempt(String username) {
+        Instant now = clock.instant();
         userRepository.findByUsername(username).ifPresent(user -> {
             user.incrementFailedAttempts(
                     lockoutProperties.maxAttempts(),
-                    lockoutProperties.duration()
+                    lockoutProperties.duration(),
+                    now
             );
             userRepository.save(user);
         });
@@ -85,7 +93,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        user.recordLogin();
+        user.recordLogin(clock.instant());
     }
 
     @Transactional

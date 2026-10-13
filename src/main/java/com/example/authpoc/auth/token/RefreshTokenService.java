@@ -65,7 +65,7 @@ public class RefreshTokenService {
 
         User user = refreshToken.getUser();
 
-        if (!user.getEnabled()) {
+        if (!user.isEnabled()) {
             refreshTokenRepository.deleteAllByFamilyId(refreshToken.getFamilyId());
             throw new InvalidTokenException("User account is disabled.");
         }

@@ -5,12 +5,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -37,17 +38,18 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
 
-    private LocalDateTime lastLoginAt;
+    private Instant lastLoginAt;
 
     @Setter
     @Column(nullable = false)
-    private Boolean enabled;
+    private boolean enabled = true;
 
     @Column(name = "failed_login_attempts", nullable = false)
-    private int failedLoginAttempts;
+    private int failedLoginAttempts = 0;
 
     @Column(name = "lockout_until")
     private Instant lockoutUntil;
@@ -62,8 +64,6 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.role = role;
-        this.createdAt = LocalDateTime.now();
-        this.enabled = true;
     }
 
     public User(String username, String email, String passwordHash) {
@@ -74,21 +74,30 @@ public class User {
         return passwordEncoder.matches(password, this.passwordHash);
     }
 
-    public void recordLogin() {
-        this.lastLoginAt = LocalDateTime.now();
+    public void recordLogin(Instant now) {
+        this.lastLoginAt = Objects.requireNonNull(now, "now must not be null");
     }
 
-    public boolean isLocked() {
+    public boolean isLocked(Instant now) {
+        Objects.requireNonNull(now, "now must not be null");
+
         if (lockoutUntil == null) {
             return false;
         }
-        return Instant.now().isBefore(lockoutUntil);
+        return now.isBefore(lockoutUntil);
     }
 
-    public void incrementFailedAttempts(int maxAttempts, Duration lockoutDuration) {
+    public void incrementFailedAttempts(
+            int maxAttempts,
+            Duration lockoutDuration,
+            Instant now
+    ) {
+        Objects.requireNonNull(lockoutDuration, "lockoutDuration must not be null");
+        Objects.requireNonNull(now, "now must not be null");
+
         this.failedLoginAttempts++;
         if (this.failedLoginAttempts >= maxAttempts) {
-            this.lockoutUntil = Instant.now().plus(lockoutDuration);
+            this.lockoutUntil = now.plus(lockoutDuration);
         }
     }
 
