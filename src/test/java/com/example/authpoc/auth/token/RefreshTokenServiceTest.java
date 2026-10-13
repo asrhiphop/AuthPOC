@@ -39,6 +39,9 @@ class RefreshTokenServiceTest {
     @Mock
     private JwtTokenService jwtTokenService;
 
+    @Mock
+    private TokenRevocationService tokenRevocationService;
+
     private final JwtProperties jwtProperties = new JwtProperties(Duration.ofSeconds(30), Duration.ofDays(7));
 
     private RefreshTokenService service;
@@ -48,7 +51,13 @@ class RefreshTokenServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new RefreshTokenService(refreshTokenRepository, userRepository, jwtTokenService, jwtProperties);
+        service = new RefreshTokenService(
+                refreshTokenRepository,
+                userRepository,
+                jwtTokenService,
+                jwtProperties,
+                tokenRevocationService
+        );
         user = new User("john", "john@example.com", "hash");
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         familyId = UUID.randomUUID();
@@ -79,7 +88,8 @@ class RefreshTokenServiceTest {
         assertThatThrownBy(() -> service.refresh("raw"))
                 .isInstanceOf(InvalidTokenException.class);
 
-        verify(refreshTokenRepository).deleteAllByFamilyId(familyId);
+        verify(tokenRevocationService).revokeFamily(familyId);
+        verify(refreshTokenRepository, never()).deleteAllByFamilyId(any());
         verify(refreshTokenRepository, never()).save(any());
     }
 
@@ -87,12 +97,15 @@ class RefreshTokenServiceTest {
     @DisplayName("refresh with an expired token should delete it and throw")
     void refresh_ExpiredToken_ShouldDeleteAndThrow() {
         RefreshToken expired = token(Instant.now().minusSeconds(60));
+        UUID tokenId = UUID.randomUUID();
+        ReflectionTestUtils.setField(expired, "id", tokenId);
         when(refreshTokenRepository.findByToken("raw")).thenReturn(Optional.of(expired));
 
         assertThatThrownBy(() -> service.refresh("raw"))
                 .isInstanceOf(InvalidTokenException.class);
 
-        verify(refreshTokenRepository).delete(expired);
+        verify(tokenRevocationService).deleteExpiredToken(tokenId);
+        verify(refreshTokenRepository, never()).delete(expired);
         verify(refreshTokenRepository, never()).save(any());
     }
 
@@ -106,7 +119,8 @@ class RefreshTokenServiceTest {
         assertThatThrownBy(() -> service.refresh("raw"))
                 .isInstanceOf(InvalidTokenException.class);
 
-        verify(refreshTokenRepository).deleteAllByFamilyId(familyId);
+        verify(tokenRevocationService).revokeFamily(familyId);
+        verify(refreshTokenRepository, never()).deleteAllByFamilyId(any());
         verify(jwtTokenService, never()).generateToken(any());
     }
 
@@ -139,7 +153,7 @@ class RefreshTokenServiceTest {
 
         service.revokeToken("nope");
 
-        verify(refreshTokenRepository, never()).deleteAllByFamilyId(any());
+        verify(tokenRevocationService, never()).revokeFamily(any());
     }
 
     @Test
@@ -149,6 +163,7 @@ class RefreshTokenServiceTest {
 
         service.revokeToken("raw");
 
-        verify(refreshTokenRepository).deleteAllByFamilyId(familyId);
+        verify(tokenRevocationService).revokeFamily(familyId);
+        verify(refreshTokenRepository, never()).deleteAllByFamilyId(any());
     }
 }

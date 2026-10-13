@@ -20,17 +20,20 @@ public class RefreshTokenService {
     private final UserRepository userRepository;
     private final JwtTokenService jwtTokenService;
     private final JwtProperties jwtProperties;
+    private final TokenRevocationService tokenRevocationService;
 
     public RefreshTokenService(
             RefreshTokenRepository refreshTokenRepository,
             UserRepository userRepository,
             JwtTokenService jwtTokenService,
-            JwtProperties jwtProperties
+            JwtProperties jwtProperties,
+            TokenRevocationService tokenRevocationService
     ) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
         this.jwtTokenService = jwtTokenService;
         this.jwtProperties = jwtProperties;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Transactional
@@ -54,19 +57,19 @@ public class RefreshTokenService {
 
         // BREACH DETECTED: A revoked token was presented again
         if (refreshToken.isRevoked()) {
-            refreshTokenRepository.deleteAllByFamilyId(refreshToken.getFamilyId());
+            tokenRevocationService.revokeFamily(refreshToken.getFamilyId());
             throw new InvalidTokenException("Security Alert: Token reuse detected. Session terminated.");
         }
 
         if (refreshToken.isExpired()) {
-            refreshTokenRepository.delete(refreshToken);
+            tokenRevocationService.deleteExpiredToken(refreshToken.getId());
             throw new InvalidTokenException("Refresh token has expired.");
         }
 
         User user = refreshToken.getUser();
 
         if (!user.isEnabled()) {
-            refreshTokenRepository.deleteAllByFamilyId(refreshToken.getFamilyId());
+            tokenRevocationService.revokeFamily(refreshToken.getFamilyId());
             throw new InvalidTokenException("User account is disabled.");
         }
 
@@ -85,7 +88,7 @@ public class RefreshTokenService {
     @Transactional
     public void revokeToken(String tokenValue) {
         refreshTokenRepository.findByToken(tokenValue)
-                .ifPresent(token -> refreshTokenRepository.deleteAllByFamilyId(token.getFamilyId()));
+                .ifPresent(token -> tokenRevocationService.revokeFamily(token.getFamilyId()));
     }
 
     @Transactional
