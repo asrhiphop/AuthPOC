@@ -1,9 +1,10 @@
 package com.example.authpoc.user;
 
 import com.example.authpoc.exception.AccountLockedException;
-import com.example.authpoc.exception.InvalidCredentialsException;
+import com.example.authpoc.exception.InvalidPasswordException;
 import com.example.authpoc.exception.ResourceAlreadyExistsException;
 import com.example.authpoc.exception.ResourceNotFoundException;
+import com.example.authpoc.exception.UnknownUsernameException;
 import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.data.domain.Page;
@@ -45,14 +46,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse verifyCredentials(String username, String rawPassword) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(InvalidCredentialsException::new);
+                .orElseThrow(() -> new UnknownUsernameException(username));
 
         if (user.isLocked()) {
-            throw new AccountLockedException("Account is temporarily locked due to multiple failed login attempts. Try again later.");
+            throw new AccountLockedException(username);
         }
 
         if (!user.matchesPassword(rawPassword, passwordEncoder)) {
-            throw new InvalidCredentialsException();
+            throw new InvalidPasswordException(username);
         }
 
         return UserResponse.fromEntity(user);

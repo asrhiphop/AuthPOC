@@ -1,16 +1,18 @@
 package com.example.authpoc.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-public abstract class BaseResourceException extends RuntimeException {
+@Getter
+public abstract class ResourceOperationException extends DomainException {
 
-    private final HttpStatus status;
     private final String title;
     private final String resourceName;
     private final String fieldName;
     private final Object fieldValue;
+    private final String internalMessage;
 
-    protected BaseResourceException(
+    protected ResourceOperationException(
             HttpStatus status,
             String title,
             String message,
@@ -18,31 +20,12 @@ public abstract class BaseResourceException extends RuntimeException {
             String fieldName,
             Object fieldValue
     ) {
-        super(message);
-        this.status = status;
+        super(status, title.toUpperCase().replace(' ', '_'), title + ".", message);
         this.title = title;
         this.resourceName = resourceName;
         this.fieldName = fieldName;
         this.fieldValue = fieldValue;
+        this.internalMessage = message;
     }
 
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getResourceName() {
-        return resourceName;
-    }
-
-    public String getFieldName() {
-        return fieldName;
-    }
-
-    public Object getFieldValue() {
-        return fieldValue;
-    }
 }

@@ -1,7 +1,8 @@
 package com.example.authpoc.exception;
 
-public class AccountLockedException extends RuntimeException {
-    public AccountLockedException(String message) {
-        super(message);
+public class AccountLockedException extends AuthenticationFailureException {
+
+    public AccountLockedException(String username) {
+        super(AuthenticationFailureReason.ACCOUNT_LOCKED, username);
     }
 }

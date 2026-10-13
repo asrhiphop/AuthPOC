@@ -1,7 +1,10 @@
 package com.example.authpoc.exception;
 
-public class SelfOperationException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class SelfOperationException extends DomainException {
+
     public SelfOperationException(String message) {
-        super(message);
+        super(HttpStatus.FORBIDDEN, "SELF_OPERATION_FORBIDDEN", message, message);
     }
 }

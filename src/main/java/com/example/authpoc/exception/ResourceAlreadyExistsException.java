@@ -2,7 +2,7 @@ package com.example.authpoc.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class ResourceAlreadyExistsException extends BaseResourceException {
+public class ResourceAlreadyExistsException extends ResourceOperationException {
 
     public ResourceAlreadyExistsException(String resourceName, String fieldName, Object fieldValue) {
         super(

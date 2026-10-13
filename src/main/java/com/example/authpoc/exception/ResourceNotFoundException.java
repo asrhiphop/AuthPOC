@@ -2,7 +2,7 @@ package com.example.authpoc.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class ResourceNotFoundException extends BaseResourceException {
+public class ResourceNotFoundException extends ResourceOperationException {
 
     public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
         super(
