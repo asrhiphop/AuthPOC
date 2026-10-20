@@ -1,6 +1,5 @@
 package com.example.authpoc.user;
 
-import com.example.authpoc.exception.ResourceAlreadyExistsException;
 import com.example.authpoc.exception.ResourceNotFoundException;
 import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
@@ -13,6 +12,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
@@ -78,37 +78,40 @@ class UserServiceAccountTest {
     @DisplayName("createUser should save the user with the encoded password and the default role")
     void createUser_ShouldHashPasswordAndSave() {
         when(passwordEncoder.encode("pw")).thenReturn("encoded");
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.saveAndFlush(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
         userService.createUser("john", "john@example.com", "pw");
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(captor.capture());
+        verify(userRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getPasswordHash()).isEqualTo("encoded");
         assertThat(captor.getValue().getRole()).isEqualTo(Role.USER);
     }
 
     @Test
-    @DisplayName("createUser should reject a duplicate username")
-    void createUser_DuplicateUsername_ShouldThrow() {
-        when(userRepository.existsByUsername("john")).thenReturn(true);
+    @DisplayName("createUser should rely on the database constraint for duplicate usernames")
+    void createUser_DuplicateUsername_ShouldPropagateConstraintViolation() {
+        when(passwordEncoder.encode("pw")).thenReturn("encoded");
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate username"));
 
         assertThatThrownBy(() -> userService.createUser("john", "john@example.com", "pw"))
-                .isInstanceOf(ResourceAlreadyExistsException.class);
+                .isInstanceOf(DataIntegrityViolationException.class);
 
-        verify(userRepository, never()).save(any());
+        verify(userRepository).saveAndFlush(any(User.class));
     }
 
     @Test
-    @DisplayName("createUser should reject a duplicate email")
-    void createUser_DuplicateEmail_ShouldThrow() {
-        when(userRepository.existsByUsername("john")).thenReturn(false);
-        when(userRepository.existsByEmail("john@example.com")).thenReturn(true);
+    @DisplayName("createUser should rely on the database constraint for duplicate emails")
+    void createUser_DuplicateEmail_ShouldPropagateConstraintViolation() {
+        when(passwordEncoder.encode("pw")).thenReturn("encoded");
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate email"));
 
         assertThatThrownBy(() -> userService.createUser("john", "john@example.com", "pw"))
-                .isInstanceOf(ResourceAlreadyExistsException.class);
+                .isInstanceOf(DataIntegrityViolationException.class);
 
-        verify(userRepository, never()).save(any());
+        verify(userRepository).saveAndFlush(any(User.class));
     }
 
     @Test

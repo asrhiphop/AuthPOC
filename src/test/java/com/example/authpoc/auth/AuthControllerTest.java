@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -96,6 +97,24 @@ class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.code").value("RESOURCE_ALREADY_EXISTS"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register with a database uniqueness violation should return a generic 409")
+    void register_DatabaseConstraintViolation_ShouldReturnGeneric409() throws Exception {
+        String email = "alice@example.com";
+        RegisterRequest request = new RegisterRequest("alice", email, "SecureP@ss123!");
+        when(authService.register(any()))
+                .thenThrow(new DataIntegrityViolationException("duplicate email=" + email));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("RESOURCE_ALREADY_EXISTS"))
+                .andExpect(content().string(not(containsString(email))))
+                .andExpect(content().string(not(containsString("alice"))));
     }
 
     @Test

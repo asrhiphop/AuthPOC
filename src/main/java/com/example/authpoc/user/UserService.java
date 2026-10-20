@@ -105,14 +105,6 @@ public class UserService {
 
     @Transactional
     public UserResponse createUser(String username, String email, String rawPassword) {
-        if (userRepository.existsByUsername(username)) {
-            throw new ResourceAlreadyExistsException("User", "username", username);
-        }
-
-        if (userRepository.existsByEmail(email)) {
-            throw new ResourceAlreadyExistsException("User", "email", email);
-        }
-
         String passwordHash = passwordEncoder.encode(rawPassword);
 
         User user = new User(
@@ -121,7 +113,7 @@ public class UserService {
                 passwordHash
         );
 
-        User savedUser = userRepository.save(user);
+        User savedUser = userRepository.saveAndFlush(user);
 
         return UserResponse.fromEntity(savedUser);
     }

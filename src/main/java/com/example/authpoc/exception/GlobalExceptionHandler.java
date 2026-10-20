@@ -2,6 +2,7 @@ package com.example.authpoc.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -51,6 +52,17 @@ public class GlobalExceptionHandler {
         problem.setDetail(exception.getPublicDetail());
         problem.setProperty("code", exception.getCode());
 
+        return problem;
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+        log.info("Resource operation failed: integrity constraint violation");
+
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setTitle("Resource already exists");
+        problem.setDetail("Resource already exists.");
+        problem.setProperty("code", "RESOURCE_ALREADY_EXISTS");
         return problem;
     }
 
