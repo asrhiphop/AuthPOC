@@ -40,9 +40,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceOperationException.class)
     public ProblemDetail handleResourceOperationException(ResourceOperationException exception) {
-        log.info("Resource operation failed: resource={} field={} value={} reason={}",
-                exception.getResourceName(), exception.getFieldName(), exception.getFieldValue(),
-                exception.getInternalMessage());
+        log.info("Resource operation failed: resource={} field={} status={} code={}",
+                exception.getResourceName(),
+                exception.getFieldName(),
+                exception.getStatus(),
+                exception.getCode());
 
         ProblemDetail problem = ProblemDetail.forStatus(exception.getStatus());
         problem.setTitle(exception.getTitle());
@@ -54,8 +56,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationFailureException.class)
     public ProblemDetail handleAuthenticationFailure(AuthenticationFailureException exception) {
-        log.warn("Authentication failed: reason={} username={}",
-                exception.getReason(), exception.getUsername());
+        log.warn("Authentication failed: reason={} userId={}",
+                exception.getReason(),
+                exception.getUserId());
 
         return problem(exception);
     }
@@ -68,7 +71,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainExceptions(DomainException exception) {
-        log.warn("Domain operation failed: code={} detail={}", exception.getCode(), exception.getPublicDetail());
+        log.warn("Domain operation failed: code={} detail={}",
+                exception.getCode(), exception.getPublicDetail());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(exception.getStatus(), exception.getPublicDetail());
         problem.setTitle(exception.getStatus().getReasonPhrase());
         problem.setProperty("code", exception.getCode());

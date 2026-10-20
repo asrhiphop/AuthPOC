@@ -62,11 +62,11 @@ public class UserService {
 
         if (user.isLocked(now)) {
             passwordEncoder.matches(rawPassword, dummyPasswordHash);
-            throw new AccountLockedException(username);
+            throw new AccountLockedException(username, user.getId());
         }
 
         if (!user.matchesPassword(rawPassword, passwordEncoder)) {
-            throw new InvalidPasswordException(username);
+            throw new InvalidPasswordException(username, user.getId());
         }
 
         return UserResponse.fromEntity(user);
