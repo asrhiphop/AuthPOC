@@ -1,10 +1,6 @@
 package com.example.authpoc.user;
 
-import com.example.authpoc.exception.AccountLockedException;
-import com.example.authpoc.exception.InvalidPasswordException;
-import com.example.authpoc.exception.ResourceAlreadyExistsException;
-import com.example.authpoc.exception.ResourceNotFoundException;
-import com.example.authpoc.exception.UnknownUsernameException;
+import com.example.authpoc.exception.*;
 import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.data.domain.Page;
@@ -19,6 +15,10 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+
+    private static final String DUMMY_PASSWORD = "dummy-password-not-used-for-login";
+
+    private final String dummyPasswordHash;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,6 +35,8 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
         this.lockoutProperties = lockoutProperties;
         this.clock = clock;
+
+        this.dummyPasswordHash = passwordEncoder.encode(DUMMY_PASSWORD);
     }
 
     public Page<UserResponse> getUsers(Pageable pageable) {
@@ -51,10 +53,15 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse verifyCredentials(String username, String rawPassword) {
         Instant now = clock.instant();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UnknownUsernameException(username));
+        User user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null) {
+            passwordEncoder.matches(rawPassword, dummyPasswordHash);
+            throw new UnknownUsernameException(username);
+        }
 
         if (user.isLocked(now)) {
+            passwordEncoder.matches(rawPassword, dummyPasswordHash);
             throw new AccountLockedException(username);
         }
 

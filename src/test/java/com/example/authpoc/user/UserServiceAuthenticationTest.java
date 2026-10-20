@@ -24,6 +24,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,6 +47,8 @@ class UserServiceAuthenticationTest {
 
     @BeforeEach
     void setUp() {
+        when(passwordEncoder.encode(anyString())).thenReturn("dummy-password-hash");
+
         userService = new UserService(
                 userRepository,
                 passwordEncoder,
@@ -62,11 +66,13 @@ class UserServiceAuthenticationTest {
                 .isInstanceOf(UnknownUsernameException.class)
                 .extracting(ex -> ((AuthenticationFailureException) ex).getReason())
                 .isEqualTo(AuthenticationFailureReason.UNKNOWN_USERNAME);
+
+        verify(passwordEncoder).matches(eq("pw"), anyString());
     }
 
     @Test
-    @DisplayName("locked account should throw AccountLockedException without checking the password")
-    void lockedAccount_ShouldThrowWithoutCheckingPassword() {
+    @DisplayName("locked account should throw AccountLockedException after a dummy password check")
+    void lockedAccount_ShouldThrowAfterDummyPasswordCheck() {
         User locked = org.mockito.Mockito.mock(User.class);
         when(userRepository.findByUsername("john")).thenReturn(Optional.of(locked));
         when(locked.isLocked(NOW)).thenReturn(true);
@@ -74,6 +80,7 @@ class UserServiceAuthenticationTest {
         assertThatThrownBy(() -> userService.verifyCredentials("john", "pw"))
                 .isInstanceOf(AccountLockedException.class);
 
+        verify(passwordEncoder).matches(eq("pw"), anyString());
         verify(locked, never()).matchesPassword(any(), any());
     }
 
