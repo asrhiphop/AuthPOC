@@ -11,8 +11,8 @@ spring:
       ddl-auto: create-drop
 
 rsa:
-  public-key: file:certs/public.pem
-  private-key: file:certs/private.pem
+  public-key: classpath:test-keys/public.pem
+  private-key: classpath:test-keys/private.pem
 
 admin:
   username: admin
