@@ -4,7 +4,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    last_login_at TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_login_at TIMESTAMP WITH TIME ZONE,
     enabled BOOLEAN NOT NULL DEFAULT TRUE
 )
