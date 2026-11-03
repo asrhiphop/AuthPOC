@@ -1,5 +1,6 @@
 # ---------- Build stage ----------
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
+# Keep the tag and manifest digest in sync when updating this image.
+FROM maven:3.9.16-eclipse-temurin-21-alpine@sha256:308cba8b638ed7e4658cea3f8399066219466211c805f6d5728c3c9c7614661b AS build
 
 WORKDIR /app
 
@@ -10,7 +11,8 @@ RUN mvn clean package -DskipTests
 
 
 # ---------- Runtime stage ----------
-FROM eclipse-temurin:21-jre-alpine
+# Keep the tag and manifest digest in sync when updating this image.
+FROM eclipse-temurin:21-jre-alpine@sha256:82cf3d9ccbe1ed46252008d51b2f2329e6b9e8a2f4394c4bebefc3ea7f4b1372
 
 WORKDIR /app
 
