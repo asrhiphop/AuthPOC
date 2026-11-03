@@ -8,7 +8,7 @@ public class InvalidTokenException extends DomainException {
     private final InvalidTokenReason reason;
 
     public InvalidTokenException(InvalidTokenReason reason) {
-        super(ErrorCode.TOKEN_INVALID, reason.name());
+        super(ErrorCode.TOKEN_INVALID);
         this.reason = reason;
     }
 

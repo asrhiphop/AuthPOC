@@ -2,6 +2,7 @@ package com.example.authpoc.auth.token;
 
 import com.example.authpoc.auth.token.dto.TokenResponse;
 import com.example.authpoc.exception.InvalidTokenException;
+import com.example.authpoc.exception.InvalidTokenReason;
 import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.security.config.JwtProperties;
 import com.example.authpoc.user.User;
@@ -86,7 +87,10 @@ class RefreshTokenServiceTest {
         when(refreshTokenRepository.findByToken("raw")).thenReturn(Optional.of(revoked));
 
         assertThatThrownBy(() -> service.refresh("raw"))
-                .isInstanceOf(InvalidTokenException.class);
+                .isInstanceOfSatisfying(InvalidTokenException.class, exception -> {
+                    assertThat(exception.getReason()).isEqualTo(InvalidTokenReason.TOKEN_REUSE_DETECTED);
+                    assertThat(exception.getMessage()).isEqualTo("TOKEN_INVALID");
+                });
 
         verify(tokenRevocationService).revokeFamily(familyId);
         verify(refreshTokenRepository, never()).deleteAllByFamilyId(any());

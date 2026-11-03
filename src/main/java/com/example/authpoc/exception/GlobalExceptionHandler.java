@@ -138,7 +138,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request
     ) {
-        return response(exception, ErrorCode.VALIDATION_FAILED, headers, request);
+        ErrorCode errorCode = exception.isForReturnValue()
+                ? ErrorCode.INTERNAL_SERVER_ERROR
+                : ErrorCode.VALIDATION_FAILED;
+        return response(exception, errorCode, headers, request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -153,20 +156,38 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail handleConstraintViolation(ConstraintViolationException exception) {
-        ProblemDetail problem = handleClientFailure(exception, ErrorCode.VALIDATION_FAILED);
-        Map<String, List<String>> errors = exception.getConstraintViolations()
-                .stream()
-                .collect(Collectors.groupingBy(
-                        violation -> violation.getPropertyPath().toString(),
-                        Collectors.mapping(violation -> violation.getMessage(), Collectors.toList())
-                ));
-        problem.setProperty("errors", errors);
-        return problem;
+        log.error("Constraint violation outside MVC request validation: type={}",
+                exception.getClass().getSimpleName(),
+                exception);
+        return problem(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(AuthenticationFailureException.class)
+    public ProblemDetail handleAuthenticationFailure(AuthenticationFailureException exception) {
+        log.warn("Authentication failed: reason={} userId={}",
+                exception.getReason(),
+                exception.getUserId());
+        return problem(exception.getErrorCode());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail handleInvalidToken(InvalidTokenException exception) {
+        log.warn("Refresh token rejected: reason={}", exception.getReason());
+        return problem(exception.getErrorCode());
+    }
+
+    @ExceptionHandler(ResourceOperationException.class)
+    public ProblemDetail handleResourceOperation(ResourceOperationException exception) {
+        log.warn("Resource operation failed: resource={} field={} code={}",
+                exception.getResourceName(),
+                exception.getFieldName(),
+                exception.getCode());
+        return problem(exception.getErrorCode());
     }
 
     @ExceptionHandler(DomainException.class)
     public ProblemDetail handleDomainException(DomainException exception) {
-        logClientFailure(exception, exception.getErrorCode());
+        logFallbackDomainFailure(exception);
         return problem(exception.getErrorCode());
     }
 
@@ -222,6 +243,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Request failed: code={} exception={}",
                 errorCode.getCode(),
                 exception.getClass().getSimpleName());
+    }
+
+    private void logFallbackDomainFailure(DomainException exception) {
+        if (exception.getStatus().is5xxServerError()) {
+            log.error("Domain operation failed: code={} type={}",
+                    exception.getCode(),
+                    exception.getClass().getSimpleName(),
+                    exception);
+        } else {
+            log.warn("Domain operation failed: code={} type={}",
+                    exception.getCode(),
+                    exception.getClass().getSimpleName());
+        }
     }
 
     private void logRequestFailure(Exception exception, HttpStatusCode status) {
