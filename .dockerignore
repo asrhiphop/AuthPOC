@@ -1,0 +1,16 @@
+.env
+certs/
+
+.git/
+.github/
+.idea/
+*.iml
+
+.mvn/
+mvnw
+mvnw.cmd
+src/
+HELP.md
+
+target/*
+!target/app.jar
