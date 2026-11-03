@@ -89,7 +89,7 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(InvalidPasswordException.class)
-                .hasMessage("AUTHENTICATION_FAILED");
+                .hasMessage("INVALID_PASSWORD");
 
         verify(userService).recordFailedAttempt("john_doe");
 

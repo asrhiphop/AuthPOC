@@ -79,6 +79,8 @@ class UserControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("profile:read"))
                                 .jwt(b -> b.subject(id.toString()))))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+                .andExpect(jsonPath("$.title").value("Not Found"))
+                .andExpect(jsonPath("$.detail").value("Resource not found."));
     }
 }

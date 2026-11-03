@@ -8,6 +8,7 @@ import com.example.authpoc.auth.token.dto.RefreshTokenRequest;
 import com.example.authpoc.auth.token.dto.TokenResponse;
 import com.example.authpoc.exception.InvalidPasswordException;
 import com.example.authpoc.exception.InvalidTokenException;
+import com.example.authpoc.exception.InvalidTokenReason;
 import com.example.authpoc.exception.ResourceAlreadyExistsException;
 import com.example.authpoc.security.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,6 +84,36 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.errors.username").isArray())
                 .andExpect(jsonPath("$.errors.email").isArray());
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/register with malformed JSON should return a safe 400 problem")
+    void register_MalformedJson_ShouldReturn400() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
+                .andExpect(jsonPath("$.detail").value("The request body is invalid."));
+    }
+
+    @Test
+    @DisplayName("GET /api/auth/register should return 405 problem+json")
+    void register_UnsupportedMethod_ShouldReturn405() throws Exception {
+        mockMvc.perform(get("/api/auth/register"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
+    }
+
+    @Test
+    @DisplayName("GET /api/auth/unknown should return 404 problem+json")
+    void unknownEndpoint_ShouldReturn404() throws Exception {
+        mockMvc.perform(get("/api/auth/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("ENDPOINT_NOT_FOUND"));
     }
 
     @Test
@@ -159,7 +191,7 @@ class AuthControllerTest {
     @DisplayName("POST /api/auth/refresh with a rejected token should return 401 and hide the internal reason")
     void refresh_InvalidToken_ShouldReturn401() throws Exception {
         when(refreshTokenService.refresh("bad"))
-                .thenThrow(new InvalidTokenException("Security Alert: Token reuse detected. Session terminated."));
+                .thenThrow(new InvalidTokenException(InvalidTokenReason.TOKEN_REUSE_DETECTED));
 
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

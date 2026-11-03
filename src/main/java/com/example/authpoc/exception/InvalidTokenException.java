@@ -1,15 +1,14 @@
 package com.example.authpoc.exception;
 
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 public class InvalidTokenException extends DomainException {
 
-    private final String reason;
+    private final InvalidTokenReason reason;
 
-    public InvalidTokenException(String reason) {
-        super(HttpStatus.UNAUTHORIZED, "TOKEN_INVALID", "Invalid refresh token.");
+    public InvalidTokenException(InvalidTokenReason reason) {
+        super(ErrorCode.TOKEN_INVALID, reason.name());
         this.reason = reason;
     }
 

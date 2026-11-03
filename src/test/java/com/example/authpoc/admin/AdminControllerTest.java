@@ -111,6 +111,16 @@ class AdminControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/admin/users/{id} with an invalid UUID should return 400 problem+json")
+    void getUser_InvalidUuid_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/admin/users/{id}", "not-a-uuid")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("admin:user:read"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+    }
+
+    @Test
     @DisplayName("PUT /api/admin/users/{id}/enabled with 'admin:user:write' authority should return 204 No Content")
     void updateUserStatus_WithRequiredPermission_ShouldReturn204() throws Exception {
         UUID adminId = UUID.randomUUID();

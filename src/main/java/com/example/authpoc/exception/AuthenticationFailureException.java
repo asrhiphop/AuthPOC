@@ -1,7 +1,6 @@
 package com.example.authpoc.exception;
 
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 import java.util.UUID;
 
@@ -21,7 +20,7 @@ public abstract class AuthenticationFailureException extends DomainException {
             String username,
             UUID userId
     ) {
-        super(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_FAILED", "Invalid username or password.");
+        super(ErrorCode.AUTHENTICATION_FAILED, reason.name());
         this.reason = reason;
         this.username = username;
         this.userId = userId;

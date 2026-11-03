@@ -1,24 +1,34 @@
 package com.example.authpoc.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-@Getter
 public abstract class DomainException extends RuntimeException {
 
-    private final HttpStatus status;
-    private final String code;
-    private final String publicDetail;
+    private final ErrorCode errorCode;
 
-    protected DomainException(HttpStatus status, String code, String publicDetail) {
-        this(status, code, publicDetail, code);
+    protected DomainException(ErrorCode errorCode) {
+        this(errorCode, errorCode.getCode());
     }
 
-    protected DomainException(HttpStatus status, String code, String publicDetail, String internalMessage) {
+    protected DomainException(ErrorCode errorCode, String internalMessage) {
         super(internalMessage);
-        this.status = status;
-        this.code = code;
-        this.publicDetail = publicDetail;
+        this.errorCode = errorCode;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+
+    public HttpStatus getStatus() {
+        return errorCode.getStatus();
+    }
+
+    public String getCode() {
+        return errorCode.getCode();
+    }
+
+    public String getPublicDetail() {
+        return errorCode.getPublicDetail();
     }
 
 }

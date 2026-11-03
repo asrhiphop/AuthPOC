@@ -2,6 +2,7 @@ package com.example.authpoc.auth.token;
 
 import com.example.authpoc.auth.token.dto.TokenResponse;
 import com.example.authpoc.exception.InvalidTokenException;
+import com.example.authpoc.exception.InvalidTokenReason;
 import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.security.config.JwtProperties;
 import com.example.authpoc.user.User;
@@ -53,24 +54,24 @@ public class RefreshTokenService {
     @Transactional
     public TokenResponse refresh(String rawToken) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(rawToken)
-                .orElseThrow(() -> new InvalidTokenException("Invalid refresh token."));
+                .orElseThrow(() -> new InvalidTokenException(InvalidTokenReason.TOKEN_NOT_FOUND));
 
         // BREACH DETECTED: A revoked token was presented again
         if (refreshToken.isRevoked()) {
             tokenRevocationService.revokeFamily(refreshToken.getFamilyId());
-            throw new InvalidTokenException("Security Alert: Token reuse detected. Session terminated.");
+            throw new InvalidTokenException(InvalidTokenReason.TOKEN_REUSE_DETECTED);
         }
 
         if (refreshToken.isExpired()) {
             tokenRevocationService.deleteExpiredToken(refreshToken.getId());
-            throw new InvalidTokenException("Refresh token has expired.");
+            throw new InvalidTokenException(InvalidTokenReason.TOKEN_EXPIRED);
         }
 
         User user = refreshToken.getUser();
 
         if (!user.isEnabled()) {
             tokenRevocationService.revokeFamily(refreshToken.getFamilyId());
-            throw new InvalidTokenException("User account is disabled.");
+            throw new InvalidTokenException(InvalidTokenReason.USER_DISABLED);
         }
 
         // Consume current token (enables reuse detection)
