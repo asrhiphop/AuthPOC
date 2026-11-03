@@ -144,7 +144,17 @@ class UserServiceAccountTest {
     @Test
     @DisplayName("deleteUser should delete an existing user")
     void deleteUser_Existing_ShouldDelete() {
-        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(userRepository.existsById(id)).thenReturn(true);
+
+        userService.deleteUser(id);
+
+        verify(userRepository).deleteById(id);
+    }
+
+    @Test
+    @DisplayName("deleteUser should remain successful when another request deletes the user after the existence check")
+    void deleteUser_ConcurrentDelete_ShouldBeIdempotent() {
+        when(userRepository.existsById(id)).thenReturn(true);
 
         userService.deleteUser(id);
 
@@ -154,7 +164,11 @@ class UserServiceAccountTest {
     @ParameterizedTest(name = "{0} should reject an unknown user")
     @EnumSource(AccountOperation.class)
     void unknownUser_ShouldThrowResourceNotFound(AccountOperation operation) {
-        when(userRepository.findById(id)).thenReturn(Optional.empty());
+        if (operation == AccountOperation.DELETE) {
+            when(userRepository.existsById(id)).thenReturn(false);
+        } else {
+            when(userRepository.findById(id)).thenReturn(Optional.empty());
+        }
 
         assertThatThrownBy(() -> execute(operation))
                 .isInstanceOf(ResourceNotFoundException.class);

@@ -1,6 +1,8 @@
 package com.example.authpoc.user;
 
-import com.example.authpoc.exception.*;
+import com.example.authpoc.exception.InvalidPasswordException;
+import com.example.authpoc.exception.ResourceNotFoundException;
+import com.example.authpoc.exception.UnknownUsernameException;
 import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -103,7 +104,9 @@ public class UserService {
 
     @Transactional
     public void deleteUser(UUID userId) {
-        getUser(userId); // Validates existence & throws ResourceNotFoundException
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User", "id", userId);
+        }
 
         userRepository.deleteById(userId);
     }
