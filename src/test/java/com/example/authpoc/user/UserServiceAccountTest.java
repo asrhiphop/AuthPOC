@@ -1,7 +1,6 @@
 package com.example.authpoc.user;
 
 import com.example.authpoc.exception.ResourceNotFoundException;
-import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +15,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -53,7 +51,6 @@ class UserServiceAccountTest {
         userService = new UserService(
                 userRepository,
                 passwordEncoder,
-                new LockoutProperties(3, Duration.ofMinutes(15)),
                 clock
         );
     }

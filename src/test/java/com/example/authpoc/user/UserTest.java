@@ -5,7 +5,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,10 +13,7 @@ import static org.mockito.Mockito.when;
 
 class UserTest {
 
-    private static final int MAX_ATTEMPTS = 3;
-    private static final Duration LOCKOUT = Duration.ofMinutes(15);
     private static final Instant NOW = Instant.parse("2026-01-01T12:00:00Z");
-    private static final Instant LOCKOUT_EXPIRES_AT = NOW.plus(LOCKOUT);
 
     private User user;
 
@@ -27,62 +23,11 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("new user should default to USER role, enabled, unlocked and without failed attempts")
+    @DisplayName("new user should default to USER role and enabled")
     void newUser_ShouldHaveSafeDefaults() {
         assertThat(user.getRole()).isEqualTo(Role.USER);
         assertThat(user.isEnabled()).isTrue();
-        assertThat(user.isLocked(NOW)).isFalse();
-        assertThat(user.getFailedLoginAttempts()).isZero();
         assertThat(user.getLastLoginAt()).isNull();
-    }
-
-    @Test
-    @DisplayName("incrementFailedAttempts should count attempts without locking before the maximum")
-    void incrementFailedAttempts_BelowMax_ShouldNotLock() {
-        user.incrementFailedAttempts(MAX_ATTEMPTS, LOCKOUT, NOW);
-        user.incrementFailedAttempts(MAX_ATTEMPTS, LOCKOUT, NOW);
-
-        assertThat(user.getFailedLoginAttempts()).isEqualTo(2);
-        assertThat(user.isLocked(NOW)).isFalse();
-        assertThat(user.getLockoutUntil()).isNull();
-    }
-
-    @Test
-    @DisplayName("incrementFailedAttempts should lock the account when the maximum is reached")
-    void incrementFailedAttempts_ReachingMax_ShouldLock() {
-        for (int i = 0; i < MAX_ATTEMPTS; i++) {
-            user.incrementFailedAttempts(MAX_ATTEMPTS, LOCKOUT, NOW);
-        }
-
-        assertThat(user.getFailedLoginAttempts()).isEqualTo(MAX_ATTEMPTS);
-        assertThat(user.getLockoutUntil()).isEqualTo(LOCKOUT_EXPIRES_AT);
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT.minusMillis(1))).isTrue();
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT)).isFalse();
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT.plusMillis(1))).isFalse();
-    }
-
-    @Test
-    @DisplayName("isLocked should be false exactly at and after the lockout expiration instant")
-    void isLocked_AtLockoutExpiration_ShouldBeFalse() {
-        user.incrementFailedAttempts(1, LOCKOUT, NOW);
-
-        assertThat(user.getLockoutUntil()).isEqualTo(LOCKOUT_EXPIRES_AT);
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT.minusMillis(1))).isTrue();
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT)).isFalse();
-        assertThat(user.isLocked(LOCKOUT_EXPIRES_AT.plusMillis(1))).isFalse();
-    }
-
-    @Test
-    @DisplayName("resetFailedAttempts should clear the counter and the lockout")
-    void resetFailedAttempts_ShouldClearState() {
-        user.incrementFailedAttempts(1, LOCKOUT, NOW);
-        assertThat(user.isLocked(NOW)).isTrue();
-
-        user.resetFailedAttempts();
-
-        assertThat(user.getFailedLoginAttempts()).isZero();
-        assertThat(user.getLockoutUntil()).isNull();
-        assertThat(user.isLocked(NOW)).isFalse();
     }
 
     @Test

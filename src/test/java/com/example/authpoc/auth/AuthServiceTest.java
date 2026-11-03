@@ -58,7 +58,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("login with valid credentials should reset attempts, record login, and issue tokens")
+    @DisplayName("login with valid credentials should record login and issue tokens")
     void login_WithValidCredentials_ShouldReturnTokenResponse() {
         LoginRequest request = new LoginRequest("john_doe", "SecureP@ss123");
         UUID userId = UUID.randomUUID();
@@ -73,15 +73,14 @@ class AuthServiceTest {
         assertThat(response.accessToken()).isEqualTo("access.token.jwt");
         assertThat(response.refreshToken()).isEqualTo("raw-refresh-token");
 
-        verify(userService).resetFailedAttempts("john_doe");
         verify(userService).recordLogin(userId);
         verify(jwtTokenService).generateToken(userResponse);
         verify(refreshTokenService).createRefreshToken(userId);
     }
 
     @Test
-    @DisplayName("login with invalid credentials should record failed attempt and rethrow exception")
-    void login_WithInvalidCredentials_ShouldRecordFailedAttemptAndThrow() {
+    @DisplayName("login with invalid credentials should rethrow exception")
+    void login_WithInvalidCredentials_ShouldThrow() {
         LoginRequest request = new LoginRequest("john_doe", "WrongPass");
 
         when(userService.verifyCredentials("john_doe", "WrongPass"))
@@ -91,9 +90,6 @@ class AuthServiceTest {
                 .isInstanceOf(InvalidPasswordException.class)
                 .hasMessage("INVALID_PASSWORD");
 
-        verify(userService).recordFailedAttempt("john_doe");
-
-        verify(userService, never()).resetFailedAttempts("john_doe");
         verify(userService, never()).recordLogin(org.mockito.ArgumentMatchers.any());
         verify(jwtTokenService, never()).generateToken(org.mockito.ArgumentMatchers.any());
     }
@@ -114,21 +110,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("login on a locked account should rethrow and never issue tokens")
-    void login_OnLockedAccount_ShouldThrowAndNotIssueTokens() {
-        LoginRequest request = new LoginRequest("john_doe", "SecureP@ss123");
-
-        when(userService.verifyCredentials("john_doe", "SecureP@ss123"))
-                .thenThrow(new com.example.authpoc.exception.AccountLockedException("john_doe"));
-
-        assertThatThrownBy(() -> authService.login(request))
-                .isInstanceOf(com.example.authpoc.exception.AccountLockedException.class);
-
-        verify(userService, never()).resetFailedAttempts("john_doe");
-        verify(jwtTokenService, never()).generateToken(org.mockito.ArgumentMatchers.any());
-    }
-
-    @Test
     @DisplayName("login should propagate a token-issuing failure after credentials were accepted")
     void login_WhenTokenIssuingFails_ShouldPropagate() {
         LoginRequest request = new LoginRequest("john_doe", "SecureP@ss123");
@@ -141,6 +122,5 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(IllegalStateException.class);
 
-        verify(userService, never()).recordFailedAttempt(org.mockito.ArgumentMatchers.any());
     }
 }

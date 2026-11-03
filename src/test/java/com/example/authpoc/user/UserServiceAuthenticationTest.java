@@ -1,11 +1,9 @@
 package com.example.authpoc.user;
 
-import com.example.authpoc.exception.AccountLockedException;
 import com.example.authpoc.exception.AuthenticationFailureReason;
 import com.example.authpoc.exception.AuthenticationFailureException;
 import com.example.authpoc.exception.InvalidPasswordException;
 import com.example.authpoc.exception.UnknownUsernameException;
-import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,17 +14,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +47,6 @@ class UserServiceAuthenticationTest {
         userService = new UserService(
                 userRepository,
                 passwordEncoder,
-                new LockoutProperties(3, Duration.ofMinutes(15)),
                 clock
         );
     }
@@ -68,20 +62,6 @@ class UserServiceAuthenticationTest {
                 .isEqualTo(AuthenticationFailureReason.UNKNOWN_USERNAME);
 
         verify(passwordEncoder).matches(eq("pw"), anyString());
-    }
-
-    @Test
-    @DisplayName("locked account should throw AccountLockedException after a dummy password check")
-    void lockedAccount_ShouldThrowAfterDummyPasswordCheck() {
-        User locked = org.mockito.Mockito.mock(User.class);
-        when(userRepository.findByUsername("john")).thenReturn(Optional.of(locked));
-        when(locked.isLocked(NOW)).thenReturn(true);
-
-        assertThatThrownBy(() -> userService.verifyCredentials("john", "pw"))
-                .isInstanceOf(AccountLockedException.class);
-
-        verify(passwordEncoder).matches(eq("pw"), anyString());
-        verify(locked, never()).matchesPassword(any(), any());
     }
 
     @Test

@@ -1,3 +1,6 @@
+-- Account lockout is intentionally not part of this POC.
+-- Keep this migration version so a fresh local database also removes any
+-- columns created by an earlier version of the POC.
 ALTER TABLE users
-    ADD COLUMN failed_login_attempts INT NOT NULL DEFAULT 0,
-    ADD COLUMN lockout_until         TIMESTAMP WITH TIME ZONE;
+    DROP COLUMN IF EXISTS failed_login_attempts,
+    DROP COLUMN IF EXISTS lockout_until;

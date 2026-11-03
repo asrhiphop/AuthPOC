@@ -1,7 +1,6 @@
 package com.example.authpoc.user;
 
 import com.example.authpoc.exception.*;
-import com.example.authpoc.security.config.LockoutProperties;
 import com.example.authpoc.user.dto.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,18 +21,15 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final LockoutProperties lockoutProperties;
     private final Clock clock;
 
     public UserService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            LockoutProperties lockoutProperties,
             Clock clock
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.lockoutProperties = lockoutProperties;
         this.clock = clock;
 
         this.dummyPasswordHash = passwordEncoder.encode(DUMMY_PASSWORD);
@@ -52,7 +48,6 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse verifyCredentials(String username, String rawPassword) {
-        Instant now = clock.instant();
         User user = userRepository.findByUsername(username).orElse(null);
 
         if (user == null) {
@@ -60,39 +55,11 @@ public class UserService {
             throw new UnknownUsernameException(username);
         }
 
-        if (user.isLocked(now)) {
-            passwordEncoder.matches(rawPassword, dummyPasswordHash);
-            throw new AccountLockedException(username, user.getId());
-        }
-
         if (!user.matchesPassword(rawPassword, passwordEncoder)) {
             throw new InvalidPasswordException(username, user.getId());
         }
 
         return UserResponse.fromEntity(user);
-    }
-
-    @Transactional
-    public void recordFailedAttempt(String username) {
-        Instant now = clock.instant();
-        userRepository.findByUsername(username).ifPresent(user -> {
-            user.incrementFailedAttempts(
-                    lockoutProperties.maxAttempts(),
-                    lockoutProperties.duration(),
-                    now
-            );
-            userRepository.save(user);
-        });
-    }
-
-    @Transactional
-    public void resetFailedAttempts(String username) {
-        userRepository.findByUsername(username).ifPresent(user -> {
-            if (user.getFailedLoginAttempts() > 0) {
-                user.resetFailedAttempts();
-                userRepository.save(user);
-            }
-        });
     }
 
     @Transactional

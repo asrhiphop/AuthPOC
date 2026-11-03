@@ -9,7 +9,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -48,12 +47,6 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(name = "failed_login_attempts", nullable = false)
-    private int failedLoginAttempts = 0;
-
-    @Column(name = "lockout_until")
-    private Instant lockoutUntil;
-
     public User(
             String username,
             String email,
@@ -78,31 +71,4 @@ public class User {
         this.lastLoginAt = Objects.requireNonNull(now, "now must not be null");
     }
 
-    public boolean isLocked(Instant now) {
-        Objects.requireNonNull(now, "now must not be null");
-
-        if (lockoutUntil == null) {
-            return false;
-        }
-        return now.isBefore(lockoutUntil);
-    }
-
-    public void incrementFailedAttempts(
-            int maxAttempts,
-            Duration lockoutDuration,
-            Instant now
-    ) {
-        Objects.requireNonNull(lockoutDuration, "lockoutDuration must not be null");
-        Objects.requireNonNull(now, "now must not be null");
-
-        this.failedLoginAttempts++;
-        if (this.failedLoginAttempts >= maxAttempts) {
-            this.lockoutUntil = now.plus(lockoutDuration);
-        }
-    }
-
-    public void resetFailedAttempts() {
-        this.failedLoginAttempts = 0;
-        this.lockoutUntil = null;
-    }
 }

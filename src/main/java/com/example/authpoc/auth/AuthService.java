@@ -5,7 +5,6 @@ import com.example.authpoc.auth.dto.RegisterRequest;
 import com.example.authpoc.auth.dto.RegisterResponse;
 import com.example.authpoc.auth.token.RefreshTokenService;
 import com.example.authpoc.auth.token.dto.TokenResponse;
-import com.example.authpoc.exception.AuthenticationFailureException;
 import com.example.authpoc.security.JwtTokenService;
 import com.example.authpoc.user.UserService;
 import com.example.authpoc.user.dto.UserResponse;
@@ -43,19 +42,10 @@ public class AuthService {
     }
 
     public TokenResponse login(LoginRequest request) {
-        UserResponse authenticatedUser;
-
-        try {
-            authenticatedUser = userService.verifyCredentials(
-                    request.username(),
-                    request.password()
-            );
-        } catch (AuthenticationFailureException ex) {
-            userService.recordFailedAttempt(request.username());
-            throw ex;
-        }
-
-        userService.resetFailedAttempts(request.username());
+        UserResponse authenticatedUser = userService.verifyCredentials(
+                request.username(),
+                request.password()
+        );
         userService.recordLogin(authenticatedUser.id());
 
         String accessToken = jwtTokenService.generateToken(authenticatedUser);
