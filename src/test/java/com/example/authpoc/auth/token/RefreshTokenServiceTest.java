@@ -132,22 +132,43 @@ class RefreshTokenServiceTest {
     @DisplayName("refresh with a valid token should rotate it within the same family and issue new tokens")
     void refresh_ValidToken_ShouldRotateWithinFamily() {
         RefreshToken valid = token(Instant.now().plusSeconds(60));
+        UUID tokenId = UUID.randomUUID();
+        ReflectionTestUtils.setField(valid, "id", tokenId);
         when(refreshTokenRepository.findByToken("raw")).thenReturn(Optional.of(valid));
+        when(refreshTokenRepository.consumeIfActive(tokenId)).thenReturn(1);
         when(userRepository.getReferenceById(user.getId())).thenReturn(user);
         when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtTokenService.generateToken(any())).thenReturn("new.access.jwt");
 
         TokenResponse response = service.refresh("raw");
 
-        assertThat(valid.isRevoked()).isTrue();
+        verify(refreshTokenRepository).consumeIfActive(tokenId);
         assertThat(response.accessToken()).isEqualTo("new.access.jwt");
         assertThat(response.refreshToken()).isNotBlank().isNotEqualTo("raw");
 
         ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
-        verify(refreshTokenRepository, org.mockito.Mockito.times(2)).save(captor.capture());
-        RefreshToken rotated = captor.getAllValues().get(1);
+        verify(refreshTokenRepository).save(captor.capture());
+        RefreshToken rotated = captor.getValue();
         assertThat(rotated.getFamilyId()).isEqualTo(familyId);
         assertThat(rotated.isRevoked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("refresh should reject a token consumed by a concurrent request")
+    void refresh_ConcurrentConsumption_ShouldDeleteFamilyAndThrow() {
+        RefreshToken valid = token(Instant.now().plusSeconds(60));
+        UUID tokenId = UUID.randomUUID();
+        ReflectionTestUtils.setField(valid, "id", tokenId);
+        when(refreshTokenRepository.findByToken("raw")).thenReturn(Optional.of(valid));
+        when(refreshTokenRepository.consumeIfActive(tokenId)).thenReturn(0);
+
+        assertThatThrownBy(() -> service.refresh("raw"))
+                .isInstanceOfSatisfying(InvalidTokenException.class, exception ->
+                        assertThat(exception.getReason()).isEqualTo(InvalidTokenReason.TOKEN_REUSE_DETECTED));
+
+        verify(refreshTokenRepository).deleteAllByFamilyId(familyId);
+        verify(refreshTokenRepository, never()).save(any());
+        verify(jwtTokenService, never()).generateToken(any());
     }
 
     @Test

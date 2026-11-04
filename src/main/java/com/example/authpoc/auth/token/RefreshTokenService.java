@@ -74,9 +74,10 @@ public class RefreshTokenService {
             throw new InvalidTokenException(InvalidTokenReason.USER_DISABLED);
         }
 
-        // Consume current token (enables reuse detection)
-        refreshToken.revoke();
-        refreshTokenRepository.save(refreshToken);
+        if (refreshTokenRepository.consumeIfActive(refreshToken.getId()) == 0) {
+            tokenRevocationService.revokeFamily(refreshToken.getFamilyId());
+            throw new InvalidTokenException(InvalidTokenReason.TOKEN_REUSE_DETECTED);
+        }
 
         String newRefreshToken = createRefreshTokenInFamily(user.getId(), refreshToken.getFamilyId());
 
@@ -90,10 +91,5 @@ public class RefreshTokenService {
     public void revokeToken(String tokenValue) {
         refreshTokenRepository.findByToken(tokenValue)
                 .ifPresent(token -> tokenRevocationService.revokeFamily(token.getFamilyId()));
-    }
-
-    @Transactional
-    public void revokeTokensForUser(UUID userId) {
-        refreshTokenRepository.deleteByUserId(userId);
     }
 }
