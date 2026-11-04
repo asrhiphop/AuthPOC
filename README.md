@@ -47,14 +47,14 @@ flowchart LR
     Flyway -->|create and validate schema| Database
     Keys -->|sign access JWTs| Tokens
     Keys -->|verify access JWTs| Security
-    classDef client fill: #e8f1ff, stroke: #2563eb, color: #111827
-    classDef api fill: #ecfdf5, stroke: #059669, color: #111827
-    classDef stateful fill: #fff7ed, stroke: #ea580c, color: #111827
-    classDef security fill: #f5f3ff, stroke: #7c3aed, color: #111827
-    class Client client
-class Auth, Application, Tokens api
-class Database,Flyway stateful
-class Security,Keys security
+    classDef client fill:#e8f1ff,stroke:#2563eb,color:#111827;
+    classDef api fill:#ecfdf5,stroke:#059669,color:#111827;
+    classDef stateful fill:#fff7ed,stroke:#ea580c,color:#111827;
+    classDef security fill:#f5f3ff,stroke:#7c3aed,color:#111827;
+    class Client client;
+    class Auth,Application,Tokens api;
+    class Database,Flyway stateful;
+    class Security,Keys security;
 ```
 
 Access-token authentication does not require a database lookup for each bearer request. Refresh-token creation,
