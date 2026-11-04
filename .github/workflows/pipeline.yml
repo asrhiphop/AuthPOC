@@ -10,6 +10,21 @@ jobs:
   build-and-test:
     runs-on: ubuntu-24.04
 
+    services:
+      postgres:
+        image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+        env:
+          POSTGRES_DB: authpoc_integration
+          POSTGRES_USER: authpoc_integration
+          POSTGRES_PASSWORD: authpoc_integration_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U authpoc_integration -d authpoc_integration"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -23,6 +38,15 @@ jobs:
 
       - name: Run Tests
         run: ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Run PostgreSQL Integration Tests
+        env:
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: '5432'
+          POSTGRES_DB: authpoc_integration
+          POSTGRES_USER: authpoc_integration
+          POSTGRES_PASSWORD: authpoc_integration_password
+        run: ./mvnw --batch-mode --no-transfer-progress -Pintegration verify
 
       - name: Build Docker Image
         run: docker build -t authpoc:latest .

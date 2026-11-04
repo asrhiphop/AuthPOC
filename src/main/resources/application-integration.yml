@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:authpoc_integration}
+    username: ${POSTGRES_USER:authpoc_integration}
+    password: ${POSTGRES_PASSWORD:authpoc_integration_password}
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+rsa:
+  public-key: classpath:test-keys/public.pem
+  private-key: classpath:test-keys/private.pem
+
+admin:
+  username: integration-admin
+  email: integration-admin@authpoc.test
+  password: IntegrationAdmin123!

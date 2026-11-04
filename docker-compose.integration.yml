@@ -1,0 +1,16 @@
+name: authpoc-integration
+
+services:
+  postgres-integration:
+    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    environment:
+      POSTGRES_DB: authpoc_integration
+      POSTGRES_USER: authpoc_integration
+      POSTGRES_PASSWORD: authpoc_integration_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authpoc_integration -d authpoc_integration"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
