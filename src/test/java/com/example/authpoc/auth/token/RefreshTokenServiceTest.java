@@ -24,27 +24,20 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceTest {
 
+    private final JwtProperties jwtProperties = new JwtProperties(Duration.ofSeconds(30), Duration.ofDays(7));
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private JwtTokenService jwtTokenService;
-
     @Mock
     private TokenRevocationService tokenRevocationService;
-
-    private final JwtProperties jwtProperties = new JwtProperties(Duration.ofSeconds(30), Duration.ofDays(7));
-
     private RefreshTokenService service;
 
     private User user;
@@ -166,7 +159,7 @@ class RefreshTokenServiceTest {
                 .isInstanceOfSatisfying(InvalidTokenException.class, exception ->
                         assertThat(exception.getReason()).isEqualTo(InvalidTokenReason.TOKEN_REUSE_DETECTED));
 
-        verify(refreshTokenRepository).deleteAllByFamilyId(familyId);
+        verify(tokenRevocationService).revokeFamily(familyId);
         verify(refreshTokenRepository, never()).save(any());
         verify(jwtTokenService, never()).generateToken(any());
     }
